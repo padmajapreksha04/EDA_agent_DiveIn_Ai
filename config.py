@@ -14,7 +14,7 @@ load_dotenv()
 
 # Google Gemini API Key
 # Get FREE key at: https://makersuite.google.com/app/apikey
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyD7KbUXSCXnqcI74qIrfxxFspPYHlbsVwM")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyB8x-p9Y27OBqjVzJDGhUeYxucqyB6uSGU")
 
 # Serper.dev API Key for web search
 # Get FREE key at: https://serper.dev/
