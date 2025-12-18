@@ -1,7 +1,7 @@
 """
 Tool definitions for the Research Agent
 """
-from langchain.tools import Tool
+from langchain_community.tools import Tool
 from langchain_community.utilities import GoogleSerperAPIWrapper
 from config import SERPER_API_KEY
 
