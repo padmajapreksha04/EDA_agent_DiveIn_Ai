@@ -436,11 +436,7 @@ def eda_analysis_page():
             eda = EDAAnalyzer(df)
             
             # Create tabs for different analyses
-            overview_tab, export_tab = st.tabs([
-                "📋 Overview",
-                "📤 Export Reports",
-                
-            ])
+            (overview_tab,) = st.tabs([ "📋 EDA and Report"])
 
             
             # TAB 1: Overview
@@ -730,10 +726,32 @@ Write 3–6 short paragraphs.
                     text_auto=".2f",
                     color_continuous_scale="RdBu",
                     origin="lower",
+                    x=num_cols,
+                    y=num_cols,
                     title="Correlation Heatmap (Numeric Columns)",
                 )
+                fig_corr.update_xaxes(side="top")
+                st.plotly_chart(fig_corr, use_container_width=True)
+                # Optional: let user pick two features for scatter
+                col_x, col_y = st.columns(2)
+                with col_x:
+                    corr_x = st.selectbox("X‑axis numeric feature", num_cols, key="corr_x")
+                with col_y:
+                    corr_y = st.selectbox("Y‑axis numeric feature", num_cols, key="corr_y")
+
+                if corr_x != corr_y:
+                   fig_scatter = px.scatter(
+                       df,
+                       x=corr_x,
+                       y=corr_y,
+                       trendline="ols",
+                       title=f"{corr_y} vs {corr_x}",
+                   )
+                   st.plotly_chart(fig_scatter, use_container_width=True)
+                else:
+                    st.info("Select two different numeric features to view the scatter plot.")
             else:
-               st.info("Need at least two numeric columns for correlation analysis.")
+                st.info("Need at least two numeric columns for correlation analysis.")
 
 
     
@@ -795,10 +813,10 @@ Write 3–6 short paragraphs.
                     title=f"{cat_feature} – Proportions",
                     )
                     st.plotly_chart(fig_cat_pie, use_container_width=True)
-
+                    st.markdown("---")
                
 # TAB 5: Export Reports
-            with export_tab:
+            
                 st.header("📤 Export Analysis Reports")
 
                 # Ensure we have a cleaned version; fall back to original
@@ -806,111 +824,33 @@ Write 3–6 short paragraphs.
 
                 col1, col2 = st.columns(2)
 
-                # -------- Excel Report --------
-                with col1:
-                    st.subheader("📊 Excel Report")
-                    st.markdown("Download a multi‑sheet Excel file with data and analysis results.")
-
-                    if st.button("📥 Generate Excel Report", type="primary", use_container_width=True):
-                        with st.spinner("Generating Excel report..."):
-                            try:
-                                output = io.BytesIO()
-                                with pd.ExcelWriter(output, engine="openpyxl") as writer:
-                                    # Original Data
-                                    st.session_state.get("original_df", df).to_excel(
-                                        writer, sheet_name="Original Data", index=False
-                                    )
-
-                                    # Cleaned Data
-                                    cleaned_df.to_excel(writer, sheet_name="Cleaned Data", index=False)
-
-                                    # Statistical Summary
-                                    if len(eda.numeric_cols) > 0:
-                                        summary = eda.get_statistical_summary()
-                                        summary.to_excel(writer, sheet_name="Statistics")
-
-                                    # Missing Values
-                                    missing_analysis = pd.DataFrame({
-                                        "Column": df.columns,
-                                        "Missing Count": df.isnull().sum().values,
-                                        "Missing %": (df.isnull().sum() / len(df) * 100).round(2).values,
-                                    })
-                                    missing_analysis.to_excel(writer, sheet_name="Missing Values", index=False)
-
-                                    # Outliers
-                                    if len(eda.numeric_cols) > 0:
-                                        outliers_info = eda.detect_outliers()
-                                        outlier_rows = []
-                                        for col, info in outliers_info.items():
-                                            outlier_rows.append({
-                                                "Column": col,
-                                                "Outlier Count": info["count"],
-                                                "Percentage": round(info["percentage"], 2),
-                                                "Lower Bound": round(info["lower_bound"], 2),
-                                                "Upper Bound": round(info["upper_bound"], 2),
-                                            })
-                                        pd.DataFrame(outlier_rows).to_excel(
-                                            writer, sheet_name="Outliers", index=False
-                                        )
-
-                                    # Correlation Matrix
-                                    if len(eda.numeric_cols) > 1:
-                                        corr_matrix = eda.get_correlation_matrix()
-                                        corr_matrix.to_excel(writer, sheet_name="Correlation")
-
-                                output.seek(0)
-                                st.download_button(
-                                    label="📊 Download Excel Report",
-                                    data=output,
-                                    file_name=f"EDA_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                                    mime=(
-                                        "application/vnd.openxmlformats-officedocument."
-                                        "spreadsheetml.sheet"
-                                    ),
-                                    use_container_width=True,
-                                )
-                                st.success("✅ Excel report generated successfully!")
-                            except Exception as e:
-                                st.error(f"❌ Error generating Excel report: {e}")
-
+                
                 # -------- PDF Report --------
-                with col2:
+                with col1:
                     st.subheader("📄 PDF Report")
                     st.markdown("Generate a concise PDF report summarizing the EDA and data quality.")
 
+                    
+                # Create / reuse PDFReportGenerator
                     if st.button("📥 Generate PDF Report", type="primary", use_container_width=True):
                         with st.spinner("Generating PDF report..."):
                             try:
-                                # Create / reuse PDFReportGenerator
-                                if "pdf_report_generator" not in st.session_state:
-                                    st.session_state["pdf_report_generator"] = PDFReportGenerator()
-
-                                pdf_gen: PDFReportGenerator = st.session_state["pdf_report_generator"]
-
-                                # You can pass df, cleaned_df, summary, missing, outliers, correlation, etc.
-                                pdf_bytes = pdf_gen.create_eda_report(
-                                    original_df=st.session_state.get("original_df", df),
-                                    cleaned_df=cleaned_df,
-                                    numeric_summary=eda.get_statistical_summary()
-                                        if len(eda.numeric_cols) > 0 else None,
-                                    missing_summary=df.isnull().sum(),
-                                    outlier_info=eda.detect_outliers()
-                                        if len(eda.numeric_cols) > 0 else None,
-                                    corr_matrix=eda.get_correlation_matrix()
-                                        if len(eda.numeric_cols) > 1 else None,
-                                    title="EDA and Data Cleaning Report",
-                                )
+                                # pass df and eda as required by __init__
+                                pdf_gen = PDFReportGenerator(df, eda)
+                                pdf_buffer = pdf_gen.generate_report()
 
                                 st.download_button(
-                                    label="📄 Download PDF Report",
-                                    data=pdf_bytes,
-                                    file_name=f"EDA_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                                    mime="application/pdf",
-                                    use_container_width=True,
+                                label="📑 Download PDF Report",
+                                data=pdf_buffer,
+                    file_name=f"EDA_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                                mime="application/pdf",
+                                use_container_width=True,
                                 )
                                 st.success("✅ PDF report generated successfully!")
                             except Exception as e:
-                                st.error(f"❌ Error generating PDF report: {e}")
+                              st.error(f"❌ Error generating PDF report: {str(e)}")
+                              st.info("💡 Make sure PDFReportGenerator is properly configured.")
+
 
             
 
