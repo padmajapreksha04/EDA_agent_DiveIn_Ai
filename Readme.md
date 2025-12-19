@@ -16,7 +16,7 @@ An intelligent research assistant powered by Google Gemini AI with real-time web
 
 ## 🚀 Demo
 
-🌐 **Live Demo**: [Your Deployment URL]
+🌐 **Live Demo**: [https://diveinai.streamlit.app/]
 
 ![Screenshot](screenshot.png)
 
@@ -39,4 +39,5 @@ An intelligent research assistant powered by Google Gemini AI with real-time web
 ### Local Setup
 
 1. **Clone the repository**
+
 
