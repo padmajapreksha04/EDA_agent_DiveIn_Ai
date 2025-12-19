@@ -1,4 +1,4 @@
-# 🔬 AI Research Assistant
+# 🔬 Automated EDA and Data Cleaning Agent
 
 An intelligent research assistant powered by Google Gemini AI with real-time web search capabilities.
 
@@ -39,3 +39,4 @@ An intelligent research assistant powered by Google Gemini AI with real-time web
 ### Local Setup
 
 1. **Clone the repository**
+
